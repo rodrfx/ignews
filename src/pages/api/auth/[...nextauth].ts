@@ -29,7 +29,6 @@ export default NextAuth({
             q.Get(q.Match(q.Index("user_by_email"), q.Casefold(user.email)))
           )
         );
-
         return true;
       } catch {
         return false;
