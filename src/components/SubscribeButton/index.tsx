@@ -1,41 +1,48 @@
 import { signIn, useSession } from "next-auth/client";
+import { useRouter } from "next/router";
 import { api } from "../../services/api";
 import { getStripeJs } from "../../services/stripe-js";
 
 import s from "./styles.module.scss";
 
 interface SubscribeButtonProps {
-  priceId: string;
+	priceId: string;
 }
 
 export function SubscribeButton({ priceId }: SubscribeButtonProps) {
-  const [session] = useSession();
+	const [session] = useSession();
+	const router = useRouter();
 
-  async function handleSubscribe() {
-    if (!session) {
-      signIn("github");
-      return;
-    }
+	async function handleSubscribe() {
+		if (!session) {
+			signIn("github");
+			return;
+		}
 
-    try {
-      const response = await api.post("/subscribe");
+		if (session.activeSubscription) {
+			router.push("/posts");
+			return;
+		}
 
-      const { sessionId } = response.data;
-      const stripe = await getStripeJs();
+		try {
+			const response = await api.post("/subscribe");
 
-      await stripe.redirectToCheckout({ sessionId });
-    } catch (err) {
-      alert(err.message);
-    }
-  }
+			const { sessionId } = response.data;
+			const stripe = await getStripeJs();
 
-  return (
-    <button
-      type="button"
-      className={s.subscribeButton}
-      onClick={handleSubscribe}
-    >
-      Subscribe now
-    </button>
-  );
+			await stripe.redirectToCheckout({ sessionId });
+		} catch (err) {
+			alert(err.message);
+		}
+	}
+
+	return (
+		<button
+			type="button"
+			className={s.subscribeButton}
+			onClick={handleSubscribe}
+		>
+			Subscribe now
+		</button>
+	);
 }
